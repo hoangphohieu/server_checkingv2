@@ -22,7 +22,7 @@ router.get("/",async function (req, res) {
         } 
         
     }
-    // console.log(new_searchObj)
+    console.log(new_searchObj)
 
 
 
@@ -53,16 +53,106 @@ router.get("/sumitem", async function (req, res) {
         new_searchObj[`item_post.${current_key}`] = searchObj[current_key];
         
     }
-    new_searchObj['item_post.datatype'] ='item'
+    // new_searchObj['item_post.datatype'] ='item'
     // console.log(new_searchObj)
 
     try {
         
         var users = await userModel.find(new_searchObj, []);
-        
+        //=start=xu ly ra ket qua summary
 
+        var json_response = {};
+        for (let i = 0; i < users.length; i++) {
+            let user = users[i];
+            current_product = user['item_post']['product'];
+            current_day = user['item_post']['day'];
+            current_lineitemquantity = user['item_post']['lineitemquantity'];
+            current_basecost = user['item_post']['basecost'];
+            current_name = user['item_post']['name'];
+            current_shippingCountry = user['item_post']['shippingCountry'];
+
+
+            if (current_product in json_response) {
+                //vd 'dress da co'
+                array_days = json_response[current_product]
+                //duyet tung ngay 1
+                is_exist_day = false;
+                for (let i_day = 0; i_day < array_days.length; i_day++) {
+                    current_day_db = array_days[i_day];
+
+                    //check ngay do co trong db chua
+                    if (current_day === current_day_db['day']) {
+
+                        //update basecost
+                        current_day_db['basecost'] = parseInt(current_day_db['basecost']) + parseInt(current_lineitemquantity) * parseInt(current_basecost)
+
+                        //update quantity
+                        current_day_db['quantity'] = parseInt(current_day_db['quantity']) + parseInt(current_lineitemquantity)
+
+                        //update array name
+                        if (current_day_db["name"] !== current_name) {
+                            //khac nhau thi add vao mang
+                            current_day_db["name"].push(current_name)
+                        } else {
+                            //name giong nhau thi thoi
+                        }
+
+                        //update array shipping_us
+                        if (current_shippingCountry === "US") {
+                            //neu la us thi them vao
+                            current_day_db["shipping_us"] = parseInt(current_day_db["shipping_us"]) + 1
+                        } else {
+                            //world wide thi bo qua
+                        }
+                        is_exist_day = true;
+                        break;
+
+                    }
+                }
+                if (!is_exist_day) {
+                    //neu current_day trong ton tai trong array_days
+                    new_day_db = {};
+                    new_day_db['day'] = current_day
+                    new_day_db['basecost'] = current_basecost * current_lineitemquantity
+                    new_day_db['quantity'] = current_lineitemquantity
+                    new_day_db['name'] = []
+                    new_day_db['name'].push(current_name)
+                    if (current_shippingCountry == "US") {
+                        new_day_db['shipping_us'] = 1
+                    } else {
+                        new_day_db['shipping_us'] = 0
+                    }
+                    array_days.push(new_day_db)
+
+                }
+
+                json_response[current_product] = array_days
+
+            } else {
+                //1 type product moi, vd "shoes chua co"
+                json_response[current_product] = []
+                new_day_db = {};
+                new_day_db['day'] = current_day
+                new_day_db['basecost'] = current_basecost * current_lineitemquantity
+                new_day_db['quantity'] = current_lineitemquantity
+                new_day_db['name'] = []
+                new_day_db['name'].push(current_name)
+
+                if (current_shippingCountry == "US") {
+                    new_day_db['shipping_us'] = 1
+                } else {
+                    new_day_db['shipping_us'] = 0
+                }
+
+                json_response[current_product].push(new_day_db)
+            }
+        }
+        console.log(json_response)
+
+        //=end=xu ly ra ket qua summary
         
-        res.send(users);
+        
+        res.send(json_response);
 
     } catch (err) { }
 
