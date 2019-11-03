@@ -9,23 +9,24 @@ require("./db.js");
 //set public
 // app.use(express.static('public'))
 
-//load middleware
+//load middleware // dung cho post
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(bodyParser.json())
 
 app.use(cors())
 
-app.use((req,res,next)=>{
-    res.append('Access-Control-Allow-Credentials', 'true');
-    res.append('Access-Control-Expose-Headers', 'X-Total-Count')
-    next();
-})
+// app.use((req,res,next)=>{
+//     res.append('Access-Control-Allow-Credentials', 'true');
+//     res.append('Access-Control-Expose-Headers', 'X-Total-Count')
+//     next();
+// })
 
 //import controller
 var userController = require("./controller/user.controller");
 
 //routers
-app.use("/api/users",userController)
+// app.use("/api",userController)
+app.use("/", userController)
 
 
 
