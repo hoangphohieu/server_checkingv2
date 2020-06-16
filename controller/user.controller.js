@@ -170,6 +170,33 @@ router.put("/:id", async function (req, res) {
         res.status(400).send("nothing user found");
         return;
     }
+    // console.log(user)
+    // console.log(req.body)
+    
+    try{
+        const new_user = new userModel(req.body)
+        user = await new_user.save()
+        res.send(user)
+       
+    }catch(err){
+        // console.log(err)    
+         res.send(err);
+    }
+    
+})
+
+
+router.patch("/:id", async function (req, res) {
+    let { id } = req.params;
+
+    //get ra user co id nhu vay
+    var user;
+    try {
+        user = await userModel.findOne({ "item_post.id": id });
+    } catch (err) {
+        res.status(400).send("nothing user found");
+        return;
+    }
 
     //update gia tri vao object  user (vua tim ra ben tren)
     //field da co thi se duoc update //field chua co thi se duoc them moi
@@ -179,27 +206,25 @@ router.put("/:id", async function (req, res) {
         // console.log(current_key)
         user['item_post'][current_key] = person2['item_post'][current_key];
     }
-    
 
-     try{
+
+    try {
         // user.fullname = req.body.fullname;
-        
+
         // save updated user
         // user = await user.save()
 
         //cau lenh update (cho nay eo hieu sao post thi dc)
-         var new_user = new userModel(user)
-         new_user = await new_user.save()
+        var new_user = new userModel(user)
+        new_user = await new_user.save()
 
         res.send(user)
-       
-    }catch(err){
-        
-         res.send(err);
+
+    } catch (err) {
+
+        res.send(err);
     }
-    
-    
-    
+
 
 })
 
