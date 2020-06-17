@@ -4,45 +4,33 @@ var router = express.Router();
 //load model
 userModel = require("../model/user.model");
 
-router.get("/",async function (req, res) {
-    let { _start, _end}=req.query;
-    _start=parseInt(_start);
+router.get("/", async function (req, res) {
+    let { _start, _end } = req.query;
+    _start = parseInt(_start);
     _end = parseInt(_end);
-    
-
-    
-    //filter exactly => return new_searchObj
     let searchObj = req.query;
     new_searchObj = {};
     for (var i = 0; i <= Object.keys(searchObj).length - 1; i++) {
         current_key = Object.keys(searchObj)[i];
-        // console.log(current_key)
-        if (current_key !== '_start' && current_key !== '_end'){
+        if (current_key !== '_start' && current_key !== '_end') {
             new_searchObj[`item_post.${current_key}`] = searchObj[current_key];
-        } 
-        
+        }
     }
     console.log(new_searchObj)
-
-
-
     try {
         //chua co limit
         var users = await userModel.find(new_searchObj, []);
         let Total_Count = users.length;
         // console.log(Total_Count)
-        
+
         //them _start and _end
         var users = await userModel.find(new_searchObj, [], {
             skip: _start,
             limit: _end - _start,
         });
-
         users.push({ "total": Total_Count })
         res.send(users);
-
     } catch (err) { }
-
 })
 router.get("/sumitem", async function (req, res) {
     //filter exactly => return new_searchObj
@@ -51,16 +39,10 @@ router.get("/sumitem", async function (req, res) {
     for (var i = 0; i <= Object.keys(searchObj).length - 1; i++) {
         current_key = Object.keys(searchObj)[i];
         new_searchObj[`item_post.${current_key}`] = searchObj[current_key];
-        
     }
-    // new_searchObj['item_post.datatype'] ='item'
-    // console.log(new_searchObj)
-
     try {
-        
         var users = await userModel.find(new_searchObj, []);
         //=start=xu ly ra ket qua summary
-
         var json_response = {};
         for (let i = 0; i < users.length; i++) {
             let user = users[i];
@@ -70,8 +52,6 @@ router.get("/sumitem", async function (req, res) {
             current_basecost = user['item_post']['basecost'];
             current_name = user['item_post']['name'];
             current_shippingCountry = user['item_post']['shippingCountry'];
-
-
             if (current_product in json_response) {
                 //vd 'dress da co'
                 array_days = json_response[current_product]
@@ -79,16 +59,12 @@ router.get("/sumitem", async function (req, res) {
                 is_exist_day = false;
                 for (let i_day = 0; i_day < array_days.length; i_day++) {
                     current_day_db = array_days[i_day];
-
                     //check ngay do co trong db chua
                     if (current_day === current_day_db['day']) {
-
                         //update basecost
                         current_day_db['basecost'] = parseInt(current_day_db['basecost']) + parseInt(current_lineitemquantity) * parseInt(current_basecost)
-
                         //update quantity
                         current_day_db['quantity'] = parseInt(current_day_db['quantity']) + parseInt(current_lineitemquantity)
-
                         //update array name
                         if (current_day_db["name"] !== current_name) {
                             //khac nhau thi add vao mang
@@ -96,7 +72,6 @@ router.get("/sumitem", async function (req, res) {
                         } else {
                             //name giong nhau thi thoi
                         }
-
                         //update array shipping_us
                         if (current_shippingCountry === "US") {
                             //neu la us thi them vao
@@ -106,7 +81,6 @@ router.get("/sumitem", async function (req, res) {
                         }
                         is_exist_day = true;
                         break;
-
                     }
                 }
                 if (!is_exist_day) {
@@ -123,9 +97,7 @@ router.get("/sumitem", async function (req, res) {
                         new_day_db['shipping_us'] = 0
                     }
                     array_days.push(new_day_db)
-
                 }
-
                 json_response[current_product] = array_days
 
             } else {
@@ -137,58 +109,21 @@ router.get("/sumitem", async function (req, res) {
                 new_day_db['quantity'] = current_lineitemquantity
                 new_day_db['name'] = []
                 new_day_db['name'].push(current_name)
-
                 if (current_shippingCountry == "US") {
                     new_day_db['shipping_us'] = 1
                 } else {
                     new_day_db['shipping_us'] = 0
                 }
-
                 json_response[current_product].push(new_day_db)
             }
         }
         console.log(json_response)
-
         //=end=xu ly ra ket qua summary
-        
-        
         res.send(json_response);
-
     } catch (err) { }
-
 })
-
-
 router.put("/:id", async function (req, res) {
     let { id } = req.params;
-
-    //get ra user co id nhu vay
-    var user;
-    try {
-        user = await userModel.findOne({ "item_post.id":id});
-    } catch (err) {
-        res.status(400).send("nothing user found");
-        return;
-    }
-    // console.log(user)
-    // console.log(req.body)
-    
-    try{
-        const new_user = new userModel(req.body)
-        user = await new_user.save()
-        res.send(user)
-       
-    }catch(err){
-        // console.log(err)    
-         res.send(err);
-    }
-    
-})
-
-
-router.patch("/:id", async function (req, res) {
-    let { id } = req.params;
-
     //get ra user co id nhu vay
     var user;
     try {
@@ -198,6 +133,35 @@ router.patch("/:id", async function (req, res) {
         return;
     }
 
+    try {
+        //xoa user bang mongoose
+        user = await user.remove()
+        res.send(user)
+    } catch (err) {
+        res.send(err)
+    }
+
+    try {
+        const new_user = new userModel(req.body);
+        user = await new_user.save();
+        // console.log("put ", user);
+
+        // res.send(user)
+    } catch (err) {
+        res.send(err);
+    }
+
+})
+router.patch("/:id", async function (req, res) {
+    let { id } = req.params;
+    //get ra user co id nhu vay
+    var user;
+    try {
+        user = await userModel.findOne({ "item_post.id": id });
+    } catch (err) {
+        res.status(400).send("nothing user found");
+        return;
+    }
     //update gia tri vao object  user (vua tim ra ben tren)
     //field da co thi se duoc update //field chua co thi se duoc them moi
     person2 = req.body
@@ -206,86 +170,50 @@ router.patch("/:id", async function (req, res) {
         // console.log(current_key)
         user['item_post'][current_key] = person2['item_post'][current_key];
     }
-
-
     try {
         // user.fullname = req.body.fullname;
-
         // save updated user
         // user = await user.save()
 
         //cau lenh update (cho nay eo hieu sao post thi dc)
         var new_user = new userModel(user)
         new_user = await new_user.save()
-
         res.send(user)
-
     } catch (err) {
-
         res.send(err);
     }
-
-
 })
-
-
 router.delete("/:id", async function (req, res) {
     let { id } = req.params;
     //get ra user co id tuong uong
     var user;
     try {
-        user = await userModel.findOne({'item_post.id':id});
+        user = await userModel.findOne({ 'item_post.id': id });
     } catch (err) {
         res.status(400).send("nothing user found");
         return;
     }
-
-    try{
+    try {
         //xoa user bang mongoose
         user = await user.remove()
         res.send(user)
-    }catch(err){
+    } catch (err) {
         res.send(err)
     }
-    
-
-
 })
-
 router.post("/", async function (req, res) {
     //check item co chua (check id cua item ton tai ?)
     var old_user;
     try {
         old_user = await userModel.findOne({ 'item_post.id': req.body['item_post']['id'] });
     } catch (err) {
-        res.send(err); 
+        res.send(err);
         return;
     }
-    
-    if (old_user){
+
+    if (old_user) {
         res.send("id item exist!!"); return //ton tai id item => return, ko post
-    } 
-    
-
-    // console.log(req.body)
-    //input
-	/*
-	{"item_post":{
-        "day": 1572714000000,
-        "month": 12,
-        "year": 2019,
-        "product": "dress",
-        "name": "#hm124",
-        "datatype": "item",
-        "basecost": 10.1,
-        "lineitemquantity": 1,
-        "id": "hm124luminousglowphonecaseiphonesamsungdah230816galaxys8",
-        "partner": "userhm"
-    }}
-
-
-    */
-
+    }
     //vong lap post
     // for (let userPost of req.body) {
     try {
@@ -295,11 +223,6 @@ router.post("/", async function (req, res) {
     } catch (err) {
         res.send(err)
     }
-    // }
-    
-    
-
-    
 })
 
 
