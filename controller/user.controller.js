@@ -125,31 +125,22 @@ router.get("/sumitem", async function (req, res) {
 router.put("/:id", async function (req, res) {
     let { id } = req.params;
     //get ra user co id nhu vay
-    var user;
+    var user, user2;
     try {
         user = await userModel.findOne({ "item_post.id": id });
     } catch (err) {
         res.status(400).send("nothing user found");
         return;
     }
-
+    user['item_post'] = req.body['item_post']
     try {
-        //xoa user bang mongoose
-        user = await user.remove()
-        res.send(user)
-    } catch (err) {
-        res.send(err)
-    }
-
-    try {
-        const new_user = new userModel(req.body);
-        user = await new_user.save();
-        // console.log("put ", user);
-
-        // res.send(user)
+        user2 = await user.save()
     } catch (err) {
         res.send(err);
     }
+    res.send(user2)
+    
+
 
 })
 router.patch("/:id", async function (req, res) {
